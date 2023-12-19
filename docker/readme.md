@@ -158,3 +158,212 @@ docker run --name test1 -d -p 8080:80 httpd
 
 
 # 5. 도커파일 작성하기 
+도커파일은 도커 이미지를 생성하기 위한 스크립트 파일, 여러 키워드를 사용해 dockerfile을 작성해 빌드를 보다 쉽게 수행이 가능함
+
+주요 인스트럭션(키워드)은 다음과 같다.
+- From 
+  base가 되는 이미지를 지정, 주로 OS 이미지나, 런타임 이미지를 지정함
+- Run
+  이미지를 빌드할때 사용하는 커맨드를 설정할때 사용 
+- ADD
+  이미지에 호스트의 파일이나 폴더를 추가하기 위해 사용, 만약 이미지에 복사하려는 디렉토리가 존재하지 않으면 docker가 자동으로 생성
+- COPY
+  호스트 환경의 파일이나 폴더를 이미지 안으로 복사하기 위해 사용
+  'ADD'와 동일하게 동작하지만 가장 확실한 차이점은 URL을 지정하거나, 압축파일을 자동으로 풀지 않음
+- EXPOSE
+  이미지가 통신에 사용할 포트를 지정할때 사용
+- ENV
+  환경 변수를 지정할떄 사용, 여기서 설정한 변수는 $name, ${name}의 형태로 사용할 수 있음, 추가로 아래와 같은 문법을 사용하여 사용할 수도 있음, **-${name:-else}:name이 정의가 안되어 있다면 'else' 가 사용됨**
+- CMD
+  도커 컨테이너가 실행될떄 실행할 커맨드를 지정, RUN과 비슷하지만 CMD는 도커 이미지를 빌드할떄 실행되는 것이 아니라 컨테이너를 시작할때 실행된다는 것이 다름
+- ENTRYPOINT
+  도커 이미지가 실행될떄 사용되는 기본 커맨드를 지정(강제)
+- WORKDIR
+  RUN, CMD, ENTRYPOINT등을 사용한 커맨드를 실행하는 디렉토리를 지정 -w 옵션으로 오버라이딩 할 수 있음
+- VOLUME
+  영구적인 데이터를 저장할 경로를 지정할떄 사용, 호스트의 디렉토리를 도커 컨테이너에 연결, 주로 휘발성으로 사용되면 안되는 데이터를 저장할 떄 사용 
+- etc
+  SHELL, LABEL, USER, ARG, STOPSIGNAL, HEALTHCHECK
+
+## 도커빌드
+도커 파일을 실행하기 위해서는 `docker build` 커맨드를 사용
+```sh
+docker build ${option} ${dockerfile directory}
+ex) docker build -t -test .
+```
+생성된 이미지를 컨테이너로 실행하기 위해서는 run 커맨드를 사용
+```sh
+ex) docker run --name test_app -p 80:80 test
+```
+
+#  6. 도커파일 작성하기 -실습-
+docker 폴더를 만들고 그 안에 dockerfile이라는 파일을 하나 만들고, 다음으로 index.html 을 만듭니다.
+
+```dockerfile
+FROM httpd
+
+COPY index.html /usr/local/apache2/htdocs/
+```
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Test Page</h1>
+    <p>Docker test page</p>
+</body>
+</html>
+```
+이런식으로 만든 후에 저 경로로 이동하여 (본인의 경우 `~/Documents/docker`로 이동)
+
+`dockerr build -t test123 .` 의 명령어를 작성해 줍니다. 
+
+명령어를 작성하면 다음과 같은 쉘이 뜨게 됩니다. 
+
+<img src="../img폴더/docker/docker%20build.png">
+
+이렇게 뜨고 나면 이미지 생성이 완료되었다는 뜻이며, 이를 확인 하기 위해서는
+
+`docker image ls`를 사용하면 생성한 이미지가 뜨게 됩니다. 
+
+기본적인 base image로 아파치의 기능을 가져오고 레이어를 얹었다고 할 수 있음
+
+이는 `docker inspect [img 이름]` 로 알 수 있는데(docker inspect test123)
+
+```sh
+test123
+"Layers": [
+                "sha256:f4e4d9391e1332a5b50063a92ccc434b92fccd14962fd9c37711d864d587d98a",
+                "sha256:f6d38e63f28a7e33d64976ea26d393f6c5affcd33b3aeff91e579697f8c682c7",
+                "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+                "sha256:ad163d90e2280e79224733a70fad8cfb21d42c177bb8fd4bc6c34fbfd65f6364",
+                "sha256:e6cadab87ec42fde87f753812f74502c25cdeb41e6a4964eae3113f728a8fc3c",
+                "sha256:13125f10bb86a88bcb1e85e4281ab0798d821823555ca84a66b55de28312c7b8",
+                "sha256:13a44ec18d4bc8e88117da7ac7bb99d3716e510efd63c101faa9b4ff4472d5a8"
+            ]
+        },
+httpd
+"Layers": [
+                "sha256:f4e4d9391e1332a5b50063a92ccc434b92fccd14962fd9c37711d864d587d98a",
+                "sha256:f6d38e63f28a7e33d64976ea26d393f6c5affcd33b3aeff91e579697f8c682c7",
+                "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+                "sha256:ad163d90e2280e79224733a70fad8cfb21d42c177bb8fd4bc6c34fbfd65f6364",
+                "sha256:e6cadab87ec42fde87f753812f74502c25cdeb41e6a4964eae3113f728a8fc3c",
+                "sha256:13125f10bb86a88bcb1e85e4281ab0798d821823555ca84a66b55de28312c7b8"
+            ]
+```
+이렇게 httpd는 6개, test123은 7개가 뜨는 것을 알 수 있다.  
+
+기본 이미지 내용은 가져오고, Layer 만큼 변경사항이 있다는 것을 알 수 있다는 것
+
+# 7. 도커 컴포즈 작성하기 
+도커 컴포즈 파일은 도커 애플리케이션의 서비스, 네트워크 볼륭등의 설정을 yaml 형식으로 작성하는 파일
+
+아래 코드는 공식 사이트 예제 이다.
+
+```yaml
+services:
+    frontend:
+        image: awesome/webapp
+        ports:
+            - "443:8043"
+        networks:
+            - front-tier
+            - back-tier
+        configs:
+            - httpd-config
+        secrets:
+            - server-certificate
+    backend:
+        image: awesome/database
+        volumes:
+            - db-data:/etc/data
+        networks:
+            - back-tier
+volumes:
+    db-data:
+        driver: flocker
+        driver_opts:
+            size: "10GIB"
+configs:
+    httpd-config:
+        external: true
+
+secrets:
+    server-certificate:
+        external: true
+
+networks:
+    front-tier: {}
+    back-tier: {}
+```
+큰 틀에서 구성 요소는 아래와 같음 
+- version
+- services
+- network
+- volume
+- config
+- secret
+
+이 중에 version은 deprecated 되어 더 이상 설정하지 않아도 됨
+
+1. services는 여러 컨테이너를 정의하는데 사용됨
+```yaml
+services:
+    frontend:
+        image: awesome/webapp
+        ports:
+            - "443:8043"
+        networks:
+            - front-tier
+            - back-tier
+        configs:
+            - httpd-config
+        secrets:
+            - server-certificate
+    backend:
+        image: awesome/database
+        volumes:
+            - db-data:/etc/data
+        networks:
+            - back-tier
+```
+이렇게 작성되어 있다면 `frontend`, `backend`는 각 컨테이너를 정의하고, 각 컨테이너의 이름이 됨 
+
+컨테이너를 설정할때 사용되는 키워드는 아래와 같다.
+|image|컨테이너의 이미지를 정의
+|:---:|:---:|
+|image|컨테이너 이미지를 정의|
+|build|위 'image' 를 활용하는 방식이 아닌 dockerfile의 경로를 지정해 빌드하여 사용하는 방법|
+|dockerfile|빌드할 dockerfile의 이름이 "Dockerfile" 이 아닌 경우 이름을 지정하기 위해 사용|
+|ports|호스트와 컨테이너의 포트 바인딩 설정에 사용됨|
+|volumes|호스트의 지정된 경로로 컨테이너의 볼륨을 마운트 하도록 설정|
+|container_name|컨테이너 이름을 설정|
+|command|컨테이너가 실행된 후  쉘에서 실행시킬 쉘 명령어 설정|
+|environment|환경변수를 설정|
+|env_file|'environment'와 동일한 기능을 수행하지만 . 이키워드를 사용하면 env 파일을 이용해서 적용이 가능함|
+|depends_on|다른 컨테이너와 의존 관계를 설정|
+|restart|컨테이너의 재시작과 관련하여 설정|
+2. 작성된 docker.yaml 파일
+   작성된 docker-compose.yml 파일을 실행하기 위해서는 아래와 같은 커맨드를 사용
+   
+   `docker-compose up`
+   
+   추가로 아래와 같은 주요 옵션을 사용할 수 있습니다. 
+
+   - -f 옵션
+    docker-compose 는 기본적으로 'docker-compose.yml' 또는 'docker-compose.yaml' 의 이름을 사용, 만약 다른 이름으로 파일을 관리하고 사용한다면 다음과 같이 입력
+
+    `docker-compose -f docker-compose-custom.yml up`
+   - -d 옵션
+    백그라운드에서 `docker-compose`를 실행하기 위해 사용
+
+    `docker-compose up -d`
+
+3. docker compose 용처
+ docker compose는 주로 말아서 가동시킬때 사용하기 보다, db, redis 인프라 환경 구축시 로컬에다 하는 것보다. Image를 가져오는것보다 내리고 쓰거나 할떄 주로 사용함
